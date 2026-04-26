@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,8 +28,17 @@ const navItems = [
 
 export function Sidebar({ className }: { className?: string }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [user, setUser] = useState<any>(null); // 👈 NEW
   const router = useRouter();
   const pathname = usePathname();
+
+  // 👇 LOAD USER FROM LOCALSTORAGE
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   return (
     <div 
@@ -68,12 +77,14 @@ export function Sidebar({ className }: { className?: string }) {
         </Button>
       </div>
 
-      {/* User Profile Hook */}
+      {/* ✅ USER PROFILE (UPDATED) */}
       <div className="px-4 py-4">
         <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3 border border-white/5 shadow-sm transition-colors hover:bg-white/10 cursor-pointer">
           <Avatar className="h-9 w-9 shrink-0 border border-primary/20">
             <AvatarImage src="" />
-            <AvatarFallback className="bg-primary/20 text-primary">JD</AvatarFallback>
+            <AvatarFallback className="bg-primary/20 text-primary">
+              {user?.name ? user.name[0] : "U"}
+            </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <motion.div
@@ -81,8 +92,13 @@ export function Sidebar({ className }: { className?: string }) {
               animate={{ opacity: 1 }}
               className="flex flex-col overflow-hidden"
             >
-              <span className="text-sm font-semibold text-white truncate">John Doe</span>
-              <span className="text-xs text-muted-foreground truncate">B.Tech - CS</span>
+              <span className="text-sm font-semibold text-white truncate">
+                {user?.name || "User"}
+              </span>
+              <span className="text-xs text-muted-foreground truncate">
+  {user?.course || "Course"}
+  {user?.section ? ` • ${user.section}` : ""}
+</span>
             </motion.div>
           )}
         </div>
@@ -132,7 +148,10 @@ export function Sidebar({ className }: { className?: string }) {
         </Button>
         <Button
           variant="ghost"
-          onClick={() => router.push("/")}
+          onClick={() => {
+            localStorage.removeItem("user"); // 👈 logout clear
+            router.push("/");
+          }}
           className={cn(
             "w-full flex items-center gap-3 rounded-lg px-3 py-6 justify-start text-red-400 hover:bg-red-400/10 hover:text-red-300",
             isCollapsed && "justify-center px-0"

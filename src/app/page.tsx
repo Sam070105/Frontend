@@ -12,21 +12,52 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!enrollmentId.trim()) return;
-    
+
     setIsLoading(true);
-    // Simulate login delay
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          system_id: enrollmentId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        // ✅ store user data
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: data.name,
+            course: data.course,
+            section: data.section,
+            system_id: enrollmentId,
+            session_token: data.session_token,
+          })
+        );
+
+        router.push("/dashboard");
+      } else {
+        alert("Invalid Student ID ❌");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server error ❌");
+    }
+
+    setIsLoading(false);
   };
 
   return (
     <div className="flex h-screen w-full items-center justify-center p-4">
-      {/* Background radial gradient */}
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background to-background" />
 
       <motion.div
@@ -67,7 +98,7 @@ export default function LoginPage() {
                 className="h-12 border-white/10 bg-black/20 px-4 text-white placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/50"
               />
             </div>
-            
+
             <Button
               type="submit"
               disabled={isLoading || !enrollmentId.trim()}
